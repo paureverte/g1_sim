@@ -1,0 +1,13 @@
+robot: g1
+robot_scene: scene_29dof.xml
+domain_id: 0
+interface: docker0
+use_joystick: 0
+joystick_type: xbox
+joystick_device: /dev/input/js0
+joystick_bits: 16
+print_scene_information: 0
+enable_elastic_band: 1
+elastic_band_start_enabled: 1
+elastic_band_point_z: 5.0
+elastic_band_initial_length: 3.0

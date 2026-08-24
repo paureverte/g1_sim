@@ -1,0 +1,9 @@
+[submodule "third_party/unitree_mujoco"]
+	path = third_party/unitree_mujoco
+	url = https://github.com/unitreerobotics/unitree_mujoco
+[submodule "third_party/unitree_ros2"]
+	path = third_party/unitree_ros2
+	url = https://github.com/unitreerobotics/unitree_ros2
+[submodule "third_party/unitree_rl_lab"]
+	path = third_party/unitree_rl_lab
+	url = https://github.com/unitreerobotics/unitree_rl_lab.git

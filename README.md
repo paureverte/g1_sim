@@ -1,0 +1,103 @@
+# g1_sim
+
+ROS 2 Jazzy workspace for launching the Unitree G1 MuJoCo simulation through `unitree_mujoco`.
+
+## Structure
+
+- `src/g1_sim`: ROS 2 package with config, launch, and runner.
+- `third_party/unitree_mujoco`: Git submodule with the upstream Unitree MuJoCo simulator and G1 MJCF assets.
+- `third_party/unitree_rl_lab`: Git submodule with the official Unitree G1 deploy controller and pretrained policies.
+- `docker/Dockerfile`: ROS 2 Jazzy image with Unitree SDK2, MuJoCo, and simulation dependencies.
+
+## Build the Docker image
+
+```bash
+docker build \
+  -f docker/Dockerfile \
+  --build-arg USER_ID=$(id -u) \
+  --build-arg GROUP_ID=$(id -g) \
+  -t g1_sim:jazzy .
+```
+
+## Start a container
+
+For the MuJoCo viewer on Linux/X11:
+
+```bash
+xhost +local:docker
+
+docker run --rm -it \
+  --net=host \
+  --ipc=host \
+  -e DISPLAY=$DISPLAY \
+  -e QT_X11_NO_MITSHM=1 \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -v "$PWD":/home/user/workspace \
+  g1_sim:jazzy
+```
+
+The entrypoint links MuJoCo into the submodule and builds `unitree_mujoco` and the official G1 RL controller on first container startup.
+
+## Build and launch
+
+Inside the container:
+
+```bash
+colcon build --symlink-install
+source install/setup.bash
+ros2 launch g1_sim g1_bringup.launch.py
+```
+
+The launch starts:
+
+- `unitree_mujoco_runner`: Unitree MuJoCo simulator.
+- `g1_rl_controller_runner`: official Unitree RL Lab G1 controller using the pretrained velocity `policy.onnx`.
+- `g1_visualization_publisher`: ROS 2 visualization topics (`/tf`, `/joint_states`, `/g1/mujoco_markers`).
+- `g1_stand_controller`: optional low-level `/lowcmd` posture controller for debugging without the RL policy.
+- `g1_cmd_vel_bridge`: optional `/cmd_vel` to Unitree high-level request bridge. The current G1 MuJoCo path does not consume `/api/sport/request`, so the RL controller is the useful locomotion path.
+- `rviz2`: enabled by default.
+
+Useful launch arguments:
+
+```bash
+ros2 launch g1_sim g1_bringup.launch.py scene:=scene_23dof.xml domain_id:=2
+ros2 launch g1_sim g1_bringup.launch.py print_scene_information:=0
+ros2 launch g1_sim g1_bringup.launch.py unitree_mujoco_dir:=/path/to/unitree_mujoco
+ros2 launch g1_sim g1_bringup.launch.py unitree_rl_lab_dir:=/path/to/unitree_rl_lab
+ros2 launch g1_sim g1_bringup.launch.py use_rviz:=false
+ros2 launch g1_sim g1_bringup.launch.py use_rl_controller:=false use_stand_controller:=true
+ros2 launch g1_sim g1_bringup.launch.py use_rl_controller:=false use_cmd_vel_bridge:=true
+```
+
+For G1 locomotion, use the upstream RL controller flow:
+
+1. Launch the simulation with the default arguments.
+2. The wrapper auto-enters `FixStand` after `rl_fixstand_delay` seconds.
+3. The wrapper auto-enters `Velocity` after `rl_velocity_delay` seconds in `FixStand`.
+4. Lower the feet and release the elastic band from MuJoCo.
+
+Without a joystick, the wrapper patches a runtime copy of the official controller so the velocity policy subscribes directly to `/cmd_vel`:
+
+```bash
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.25, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.1}}" -r 10
+```
+
+The patched controller writes zero velocity if no `/cmd_vel` arrives for `policy_cmd_vel_timeout` seconds. The command values are `vx`, `vy`, and `yaw` in m/s, m/s, and rad/s. The official deploy config clamps them to `vx=[-0.5, 1.0]`, `vy=[-0.3, 0.3]`, and `yaw=[-0.2, 0.2]`.
+
+If `xdotool` can see the MuJoCo window over X11, these replace the MuJoCo keyboard steps:
+
+```bash
+ros2 run g1_sim g1_mujoco_key 8  # lower feet
+ros2 run g1_sim g1_mujoco_key 9  # release elastic band
+```
+
+If `xdotool` cannot find the window, click the MuJoCo window and press `8`/`9` manually. The original joystick transitions are still available by launching with `rl_auto_start:=false`.
+
+The RL controller and the debug stand controller both publish low-level motor commands. Do not enable both at the same time.
+
+The `/cmd_vel` bridge is kept for experiments with a high-level Unitree API server, but the current G1 MuJoCo controller path does not consume `/api/sport/request`.
+
+The Unitree ROS 2 message packages from `third_party/unitree_ros2` are built with the workspace so `ros2 topic list`, `ros2 topic info`, and `ros2 topic echo` can resolve Unitree DDS topics such as `/rt/lowstate`.
+
+The default config launches `g1` with `scene_29dof.xml`, DDS domain `0`, interface `docker0`, joystick enabled, and the humanoid elastic band enabled for startup. DDS domain `0` matches the official `g1_ctrl` controller.
