@@ -1,8 +1,16 @@
 Panels:
   - Class: rviz_common/Displays
+    Help Height: 70
     Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+    Tree Height: 450
   - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
     Name: Views
+    Splitter Ratio: 0.5
 Visualization Manager:
   Class: ""
   Displays:
@@ -12,7 +20,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.03
+        Line Width: 0.029999999329447746
         Value: Lines
       Name: Ground Grid
       Normal Cell Count: 0
@@ -26,16 +34,114 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        left_ankle_pitch_link:
+          Value: true
+        left_ankle_roll_link:
+          Value: true
+        left_elbow_link:
+          Value: true
+        left_hip_pitch_link:
+          Value: true
+        left_hip_roll_link:
+          Value: true
+        left_hip_yaw_link:
+          Value: true
+        left_knee_link:
+          Value: true
+        left_shoulder_pitch_link:
+          Value: true
+        left_shoulder_roll_link:
+          Value: true
+        left_shoulder_yaw_link:
+          Value: true
+        left_wrist_pitch_link:
+          Value: true
+        left_wrist_roll_link:
+          Value: true
+        left_wrist_yaw_link:
+          Value: true
+        odom:
+          Value: true
+        pelvis:
+          Value: true
+        right_ankle_pitch_link:
+          Value: true
+        right_ankle_roll_link:
+          Value: true
+        right_elbow_link:
+          Value: true
+        right_hip_pitch_link:
+          Value: true
+        right_hip_roll_link:
+          Value: true
+        right_hip_yaw_link:
+          Value: true
+        right_knee_link:
+          Value: true
+        right_shoulder_pitch_link:
+          Value: true
+        right_shoulder_roll_link:
+          Value: true
+        right_shoulder_yaw_link:
+          Value: true
+        right_wrist_pitch_link:
+          Value: true
+        right_wrist_roll_link:
+          Value: true
+        right_wrist_yaw_link:
+          Value: true
+        torso_link:
+          Value: true
+        waist_roll_link:
+          Value: true
+        waist_yaw_link:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        odom:
+          pelvis:
+            left_hip_pitch_link:
+              left_hip_roll_link:
+                left_hip_yaw_link:
+                  left_knee_link:
+                    left_ankle_pitch_link:
+                      left_ankle_roll_link:
+                        {}
+            right_hip_pitch_link:
+              right_hip_roll_link:
+                right_hip_yaw_link:
+                  right_knee_link:
+                    right_ankle_pitch_link:
+                      right_ankle_roll_link:
+                        {}
+            waist_yaw_link:
+              waist_roll_link:
+                torso_link:
+                  left_shoulder_pitch_link:
+                    left_shoulder_roll_link:
+                      left_shoulder_yaw_link:
+                        left_elbow_link:
+                          left_wrist_roll_link:
+                            left_wrist_pitch_link:
+                              left_wrist_yaw_link:
+                                {}
+                  right_shoulder_pitch_link:
+                    right_shoulder_roll_link:
+                      right_shoulder_yaw_link:
+                        right_elbow_link:
+                          right_wrist_roll_link:
+                            right_wrist_pitch_link:
+                              right_wrist_yaw_link:
+                                {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/MarkerArray
@@ -64,6 +170,13 @@ Visualization Manager:
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
       Line color: 128; 128; 0
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: goal_pose
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
@@ -71,25 +184,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 5
+      Distance: 3.549273729324341
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
       Focal Point:
         X: 0
         Y: 0
-        Z: 0.6
-      Name: Orbit
-      Pitch: 0.45
+        Z: 0.6000000238418579
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.37000006437301636
       Target Frame: <Fixed Frame>
-      Yaw: 0.785
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 0.7999992370605469
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 900
+  Height: 1043
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001f4000002d0fc0200000001fb000000100044006900730070006c006100790073010000003d000002d0000000c900ffffff000000010000012c000002d0fc0200000001fb0000000a00560069006500770073010000003d000002d0000000a400ffffff00000320000002d000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000019b000003bdfc0200000002fb000000100044006900730070006c006100790073010000003b00000243000000c700fffffffb0000000a00560069006500770073010000028400000174000000a000ffffff000005df000003bd00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1200
-  X: 80
-  Y: 80
+  Width: 1920
+  X: 3840
+  Y: 0

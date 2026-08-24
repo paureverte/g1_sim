@@ -47,7 +47,7 @@ Inside the container:
 
 ```bash
 cb
-ros2 launch g1_sim g1_bringup.launch.py
+ros2 launch g1_sim g1_sim.launch.py
 ```
 
 The image defines these aliases:
@@ -63,15 +63,23 @@ The launch starts:
 - `g1_cmd_vel_bridge`: optional `/cmd_vel` to Unitree high-level request bridge. The current G1 MuJoCo path does not consume `/api/sport/request`, so the RL controller is the useful locomotion path.
 - `rviz2`: enabled by default.
 
+Nav2 navigation-only launch, without localization, AMCL, SLAM, or map server:
+
+```bash
+ros2 launch g1_nav g1_nav.launch.py
+```
+
+`g1_nav` uses `odom` as the navigation frame, `pelvis` as the robot base frame, and publishes smoothed velocity commands to `/cmd_vel`.
+
 Useful launch arguments:
 
 ```bash
-ros2 launch g1_sim g1_bringup.launch.py scene:=scene_23dof.xml domain_id:=2
-ros2 launch g1_sim g1_bringup.launch.py print_scene_information:=0
-ros2 launch g1_sim g1_bringup.launch.py unitree_mujoco_dir:=/path/to/unitree_mujoco
-ros2 launch g1_sim g1_bringup.launch.py unitree_rl_lab_dir:=/path/to/unitree_rl_lab
-ros2 launch g1_sim g1_bringup.launch.py use_rviz:=false
-ros2 launch g1_sim g1_bringup.launch.py use_rl_controller:=false use_cmd_vel_bridge:=true
+ros2 launch g1_sim g1_sim.launch.py scene:=scene_23dof.xml domain_id:=2
+ros2 launch g1_sim g1_sim.launch.py print_scene_information:=0
+ros2 launch g1_sim g1_sim.launch.py unitree_mujoco_dir:=/path/to/unitree_mujoco
+ros2 launch g1_sim g1_sim.launch.py unitree_rl_lab_dir:=/path/to/unitree_rl_lab
+ros2 launch g1_sim g1_sim.launch.py use_rviz:=false
+ros2 launch g1_sim g1_sim.launch.py use_rl_controller:=false use_cmd_vel_bridge:=true
 ```
 
 For G1 locomotion, use the upstream RL controller flow:
