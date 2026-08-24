@@ -54,6 +54,7 @@ def _launch_rl_controller(context):
         '--velocity-delay', LaunchConfiguration('rl_velocity_delay').perform(context),
         '--cmd-vel-topic', LaunchConfiguration('cmd_vel_topic').perform(context),
         '--cmd-vel-timeout', LaunchConfiguration('policy_cmd_vel_timeout').perform(context),
+        '--cmd-vel-yaw-limit', LaunchConfiguration('policy_cmd_vel_yaw_limit').perform(context),
     ]
     arguments.extend(_optional_argument(context, 'unitree_rl_lab_dir', '--unitree-rl-lab-dir'))
     arguments.extend(_optional_argument(context, 'network_interface', '--network-interface'))
@@ -87,6 +88,7 @@ def generate_launch_description():
         DeclareLaunchArgument('rl_fixstand_delay', default_value='0.5'),
         DeclareLaunchArgument('rl_velocity_delay', default_value='4.0'),
         DeclareLaunchArgument('policy_cmd_vel_timeout', default_value='0.5'),
+        DeclareLaunchArgument('policy_cmd_vel_yaw_limit', default_value='1.0'),
         DeclareLaunchArgument('state_joint_topic', default_value='g1/rl_joint_states'),
         DeclareLaunchArgument('base_pose_topic', default_value='g1/mujoco_base_pose'),
         DeclareLaunchArgument('root_frame', default_value='odom'),

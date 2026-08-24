@@ -96,7 +96,7 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
   "{linear: {x: 0.25, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.1}}" -r 10
 ```
 
-The patched controller writes zero velocity if no `/cmd_vel` arrives for `policy_cmd_vel_timeout` seconds. The command values are `vx`, `vy`, and `yaw` in m/s, m/s, and rad/s. The official deploy config clamps them to `vx=[-0.5, 1.0]`, `vy=[-0.3, 0.3]`, and `yaw=[-0.2, 0.2]`.
+The patched controller writes zero velocity if no `/cmd_vel` arrives for `policy_cmd_vel_timeout` seconds. The command values are passed through linearly as `vx`, `vy`, and `yaw` in m/s, m/s, and rad/s. Linear velocity is clamped to the official policy range, and yaw is only limited by `policy_cmd_vel_yaw_limit` for safety.
 
 MuJoCo publishes the floating-base groundtruth on `/g1/mujoco_base_pose`, and the visualization bridge uses it as the root TF. RViz uses `odom` as the fixed frame by default.
 

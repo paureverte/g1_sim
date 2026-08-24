@@ -11,7 +11,7 @@ import yaml
 DEFAULT_UNITREE_RL_LAB_DIR = '/home/user/workspace/third_party/unitree_rl_lab'
 ROBOT_CONTROLLER_DIR = Path('deploy/robots/g1_29dof')
 DEFAULT_RUNTIME_DIR = '/tmp/g1_sim_unitree_rl_lab'
-RUNTIME_PATCH_VERSION = 'g1_sim_ros_cmd_vel_v5'
+RUNTIME_PATCH_VERSION = 'g1_sim_ros_cmd_vel_v7'
 
 
 CTRL_FSM_AUTO_PATCH = '''
@@ -78,9 +78,10 @@ public:
         }
 
         std::vector<float> out = cmd_;
+        auto yaw_limit = env_value("G1_RL_CMD_VEL_YAW_LIMIT", 1.0);
         out[0] = std::clamp(out[0], cfg["lin_vel_x"][0].as<float>(), cfg["lin_vel_x"][1].as<float>());
         out[1] = std::clamp(out[1], cfg["lin_vel_y"][0].as<float>(), cfg["lin_vel_y"][1].as<float>());
-        out[2] = std::clamp(out[2], cfg["ang_vel_z"][0].as<float>(), cfg["ang_vel_z"][1].as<float>());
+        out[2] = std::clamp(out[2], static_cast<float>(-yaw_limit), static_cast<float>(yaw_limit));
         return out;
     }
 
@@ -328,6 +329,7 @@ def _parse_args(argv):
     parser.add_argument('--velocity-delay', default=os.environ.get('G1_RL_VELOCITY_DELAY', '4.0'))
     parser.add_argument('--cmd-vel-topic', default=os.environ.get('G1_RL_CMD_VEL_TOPIC', '/cmd_vel'))
     parser.add_argument('--cmd-vel-timeout', default=os.environ.get('G1_RL_CMD_VEL_TIMEOUT', '0.5'))
+    parser.add_argument('--cmd-vel-yaw-limit', default=os.environ.get('G1_RL_CMD_VEL_YAW_LIMIT', '1.0'))
     args, _ = parser.parse_known_args(argv)
     return args
 
@@ -356,6 +358,7 @@ def main(argv=None):
     env['G1_RL_VELOCITY_DELAY'] = str(args.velocity_delay)
     env['G1_RL_CMD_VEL_TOPIC'] = str(args.cmd_vel_topic)
     env['G1_RL_CMD_VEL_TIMEOUT'] = str(args.cmd_vel_timeout)
+    env['G1_RL_CMD_VEL_YAW_LIMIT'] = str(args.cmd_vel_yaw_limit)
     library_paths = [
         '/opt/unitree_robotics/lib',
         '/usr/local/lib',
