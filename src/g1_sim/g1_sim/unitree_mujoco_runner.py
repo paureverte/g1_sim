@@ -10,7 +10,7 @@ import yaml
 
 DEFAULT_UNITREE_MUJOCO_DIR = '/home/user/workspace/third_party/unitree_mujoco'
 DEFAULT_MUJOCO_HOME = '/opt/mujoco/mujoco-3.3.6'
-MUJOCO_RUNTIME_PATCH_VERSION = 'g1_sim_groundtruth_pose_v1'
+MUJOCO_RUNTIME_PATCH_VERSION = 'g1_sim_hide_ui_panels_v1'
 
 
 def _discover_unitree_mujoco_dir(configured_path):
@@ -119,6 +119,10 @@ def _patch_runtime_mujoco(simulate_dir):
             (
                 '#include <mujoco/mujoco.h>\n#include "simulate.h"\n',
                 '#include <mujoco/mujoco.h>\n#include <geometry_msgs/msg/pose_stamped.hpp>\n#include <rclcpp/rclcpp.hpp>\n#include "simulate.h"\n',
+            ),
+            (
+                '  auto sim = std::make_unique<mj::Simulate>(\n    std::make_unique<mj::GlfwAdapter>(),\n    &cam, &opt, &pert, /* is_passive = */ false);\n',
+                '  auto sim = std::make_unique<mj::Simulate>(\n    std::make_unique<mj::GlfwAdapter>(),\n    &cam, &opt, &pert, /* is_passive = */ false);\n  sim->ui0_enable = 0;\n  sim->ui1_enable = 0;\n',
             ),
             (
                 '  param::config.band_attached_link = 6 * body_id;\n  \n  std::unique_ptr<UnitreeSDK2BridgeBase> interface = nullptr;\n',

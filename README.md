@@ -2,6 +2,9 @@
 
 ROS 2 Jazzy workspace for launching the Unitree G1 MuJoCo simulation through `unitree_mujoco`.
 
+![G1 simulation screenshot](doc/screenshot.png)
+
+
 ## Structure
 
 - `src/g1_sim`: ROS 2 package with config, launch, and runner.
@@ -12,28 +15,28 @@ ROS 2 Jazzy workspace for launching the Unitree G1 MuJoCo simulation through `un
 ## Build the Docker image
 
 ```bash
-docker build \
-  -f docker/Dockerfile \
-  --build-arg USER_ID=$(id -u) \
-  --build-arg GROUP_ID=$(id -g) \
-  -t g1_sim:jazzy .
+./docker/build.sh
 ```
 
-## Start a container
+Use `--no-cache` to force a clean rebuild:
+
+```bash
+./docker/build.sh --no-cache
+```
+
+## Start the container
 
 For the MuJoCo viewer on Linux/X11:
 
 ```bash
 xhost +local:docker
+docker compose -f docker/docker-compose.yml up -d
+```
 
-docker run --rm -it \
-  --net=host \
-  --ipc=host \
-  -e DISPLAY=$DISPLAY \
-  -e QT_X11_NO_MITSHM=1 \
-  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-  -v "$PWD":/home/user/workspace \
-  g1_sim:jazzy
+Open a shell inside the running container:
+
+```bash
+docker exec -it g1_sim_jazzy bash
 ```
 
 The entrypoint links MuJoCo into the submodule and builds `unitree_mujoco` and the official G1 RL controller on first container startup.
@@ -43,10 +46,14 @@ The entrypoint links MuJoCo into the submodule and builds `unitree_mujoco` and t
 Inside the container:
 
 ```bash
-colcon build --symlink-install
-source install/setup.bash
+cb
 ros2 launch g1_sim g1_bringup.launch.py
 ```
+
+The image defines these aliases:
+
+- `cb`: build the workspace with `colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release` and source `install/setup.bash`.
+- `cs`: source `install/setup.bash`.
 
 The launch starts:
 
