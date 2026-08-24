@@ -23,9 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'unitree_mujoco_runner = g1_sim.unitree_mujoco_runner:main',
-            'g1_visualization_publisher = g1_sim.g1_visualization_publisher:main',
+            'g1_mujoco_ros_bridge = g1_sim.g1_mujoco_ros_bridge:main',
             'g1_cmd_vel_bridge = g1_sim.g1_cmd_vel_bridge:main',
-            'g1_stand_controller = g1_sim.g1_stand_controller:main',
             'g1_rl_controller_runner = g1_sim.g1_rl_controller_runner:main',
             'g1_mujoco_key = g1_sim.g1_mujoco_key:main',
         ],

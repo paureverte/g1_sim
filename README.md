@@ -52,8 +52,7 @@ The launch starts:
 
 - `unitree_mujoco_runner`: Unitree MuJoCo simulator.
 - `g1_rl_controller_runner`: official Unitree RL Lab G1 controller using the pretrained velocity `policy.onnx`.
-- `g1_visualization_publisher`: ROS 2 visualization topics (`/tf`, `/joint_states`, `/g1/mujoco_markers`).
-- `g1_stand_controller`: optional low-level `/lowcmd` posture controller for debugging without the RL policy.
+- `g1_mujoco_ros_bridge`: MuJoCo-to-ROS bridge for `/tf`, `/joint_states`, `/g1/mujoco_markers`, and MuJoCo groundtruth `odom -> pelvis`.
 - `g1_cmd_vel_bridge`: optional `/cmd_vel` to Unitree high-level request bridge. The current G1 MuJoCo path does not consume `/api/sport/request`, so the RL controller is the useful locomotion path.
 - `rviz2`: enabled by default.
 
@@ -65,7 +64,6 @@ ros2 launch g1_sim g1_bringup.launch.py print_scene_information:=0
 ros2 launch g1_sim g1_bringup.launch.py unitree_mujoco_dir:=/path/to/unitree_mujoco
 ros2 launch g1_sim g1_bringup.launch.py unitree_rl_lab_dir:=/path/to/unitree_rl_lab
 ros2 launch g1_sim g1_bringup.launch.py use_rviz:=false
-ros2 launch g1_sim g1_bringup.launch.py use_rl_controller:=false use_stand_controller:=true
 ros2 launch g1_sim g1_bringup.launch.py use_rl_controller:=false use_cmd_vel_bridge:=true
 ```
 
@@ -85,6 +83,8 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
 
 The patched controller writes zero velocity if no `/cmd_vel` arrives for `policy_cmd_vel_timeout` seconds. The command values are `vx`, `vy`, and `yaw` in m/s, m/s, and rad/s. The official deploy config clamps them to `vx=[-0.5, 1.0]`, `vy=[-0.3, 0.3]`, and `yaw=[-0.2, 0.2]`.
 
+MuJoCo publishes the floating-base groundtruth on `/g1/mujoco_base_pose`, and the visualization bridge uses it as the root TF. RViz uses `odom` as the fixed frame by default.
+
 If `xdotool` can see the MuJoCo window over X11, these replace the MuJoCo keyboard steps:
 
 ```bash
@@ -93,8 +93,6 @@ ros2 run g1_sim g1_mujoco_key 9  # release elastic band
 ```
 
 If `xdotool` cannot find the window, click the MuJoCo window and press `8`/`9` manually. The original joystick transitions are still available by launching with `rl_auto_start:=false`.
-
-The RL controller and the debug stand controller both publish low-level motor commands. Do not enable both at the same time.
 
 The `/cmd_vel` bridge is kept for experiments with a high-level Unitree API server, but the current G1 MuJoCo controller path does not consume `/api/sport/request`.
 

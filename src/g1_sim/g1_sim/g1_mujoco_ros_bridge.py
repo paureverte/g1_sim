@@ -139,13 +139,14 @@ def _model_from_config(config_path, unitree_mujoco_dir):
     return unitree_mujoco_dir / 'unitree_robots' / robot / model
 
 
-class G1VisualizationPublisher(Node):
-    def __init__(self, model_path, state_joint_topic):
+class G1MujocoRosBridge(Node):
+    def __init__(self, model_path, state_joint_topic, base_pose_topic, root_frame):
         from sensor_msgs.msg import JointState
+        from geometry_msgs.msg import PoseStamped
         from tf2_ros import TransformBroadcaster
         from visualization_msgs.msg import MarkerArray
 
-        super().__init__('g1_visualization_publisher')
+        super().__init__('g1_mujoco_ros_bridge')
         root, meshes = _mesh_resources(model_path)
         worldbody = root.find('worldbody')
         if worldbody is None:
@@ -153,26 +154,35 @@ class G1VisualizationPublisher(Node):
 
         links = []
         markers = []
+        base_frame = None
         for body in worldbody.findall('body'):
-            _body_links(body, 'world', links)
+            if base_frame is None:
+                base_frame = body.get('name')
+            _body_links(body, root_frame, links)
             _geom_markers(body, meshes, markers)
 
         self._links = links
+        self._root_frame = root_frame
+        self._base_frame = base_frame
         self._joint_names = _joint_names(root)
         self._joint_positions = {name: 0.0 for name in self._joint_names}
-        self._base_quat = None
+        self._base_pose = None
         self._markers = MarkerArray(markers=markers)
         self._tf_broadcaster = TransformBroadcaster(self)
         self._joint_state_pub = self.create_publisher(JointState, 'joint_states', 10)
         self._marker_pub = self.create_publisher(MarkerArray, 'g1/mujoco_markers', 10)
         self._state_joint_sub = self.create_subscription(JointState, state_joint_topic, self._on_joint_state, 10)
+        self._base_pose_sub = self.create_subscription(PoseStamped, base_pose_topic, self._on_base_pose, 10)
         self._timer = self.create_timer(0.02, self._publish)
-        self.get_logger().info(f'Publishing G1 RViz markers and dynamic TF from {model_path}; listening to {state_joint_topic}')
+        self.get_logger().info(f'Publishing G1 RViz markers and dynamic TF from {model_path}; listening to {state_joint_topic} and {base_pose_topic}')
 
     def _on_joint_state(self, msg):
         for index, name in enumerate(msg.name):
             if index < len(msg.position) and name in self._joint_positions:
                 self._joint_positions[name] = float(msg.position[index])
+
+    def _on_base_pose(self, msg):
+        self._base_pose = msg
 
     def _publish(self):
         from geometry_msgs.msg import TransformStamped
@@ -194,8 +204,14 @@ class G1VisualizationPublisher(Node):
             transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z = link['pos']
 
             quat = link['quat']
-            if link['child'] == 'pelvis' and self._base_quat is not None:
-                quat = self._base_quat
+            if link['child'] == self._base_frame and self._base_pose is not None:
+                transform.header.frame_id = self._base_pose.header.frame_id or self._root_frame
+                transform.transform.translation.x = self._base_pose.pose.position.x
+                transform.transform.translation.y = self._base_pose.pose.position.y
+                transform.transform.translation.z = self._base_pose.pose.position.z
+                transform.transform.rotation = self._base_pose.pose.orientation
+                transforms.append(transform)
+                continue
             elif link['joint_name'] in self._joint_positions:
                 quat = _quat_multiply(quat, _quat_from_axis_angle(link['joint_axis'], self._joint_positions[link['joint_name']]))
             transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w = _to_ros_quat(quat)
@@ -214,6 +230,8 @@ def _parse_args(argv):
     parser.add_argument('--unitree-mujoco-dir')
     parser.add_argument('--model')
     parser.add_argument('--state-joint-topic', default='g1/rl_joint_states')
+    parser.add_argument('--base-pose-topic', default='g1/mujoco_base_pose')
+    parser.add_argument('--root-frame', default='odom')
     args, _ = parser.parse_known_args(argv)
     return args
 
@@ -227,7 +245,7 @@ def main(argv=None):
     model_path = Path(args.model).expanduser().resolve() if args.model else _model_from_config(args.config, unitree_mujoco_dir)
 
     rclpy.init(args=None)
-    node = G1VisualizationPublisher(model_path, args.state_joint_topic)
+    node = G1MujocoRosBridge(model_path, args.state_joint_topic, args.base_pose_topic, args.root_frame)
     try:
         rclpy.spin(node)
     except (ExternalShutdownException, KeyboardInterrupt):

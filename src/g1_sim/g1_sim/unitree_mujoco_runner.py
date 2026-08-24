@@ -10,7 +10,7 @@ import yaml
 
 DEFAULT_UNITREE_MUJOCO_DIR = '/home/user/workspace/third_party/unitree_mujoco'
 DEFAULT_MUJOCO_HOME = '/opt/mujoco/mujoco-3.3.6'
-MUJOCO_RUNTIME_PATCH_VERSION = 'g1_sim_elastic_band_low_v1'
+MUJOCO_RUNTIME_PATCH_VERSION = 'g1_sim_groundtruth_pose_v1'
 
 
 def _discover_unitree_mujoco_dir(configured_path):
@@ -88,6 +88,19 @@ def _build_runtime_mujoco(simulate_dir, build_dir):
 
 def _patch_runtime_mujoco(simulate_dir):
     _patch_file(
+        simulate_dir / 'CMakeLists.txt',
+        [
+            (
+                'find_package(unitree_sdk2 REQUIRED)\nfind_package(Boost REQUIRED COMPONENTS program_options)\n',
+                'find_package(unitree_sdk2 REQUIRED)\nfind_package(Boost REQUIRED COMPONENTS program_options)\nfind_package(ament_cmake REQUIRED)\nfind_package(rclcpp REQUIRED)\nfind_package(geometry_msgs REQUIRED)\n',
+            ),
+            (
+                'add_executable(unitree_mujoco ${SIM_SRC} src/main.cc)\n',
+                'add_executable(unitree_mujoco ${SIM_SRC} src/main.cc)\nament_target_dependencies(unitree_mujoco rclcpp geometry_msgs)\n',
+            ),
+        ],
+    )
+    _patch_file(
         simulate_dir / 'src' / 'param.h',
         [
             (
@@ -104,8 +117,16 @@ def _patch_runtime_mujoco(simulate_dir):
         simulate_dir / 'src' / 'main.cc',
         [
             (
+                '#include <mujoco/mujoco.h>\n#include "simulate.h"\n',
+                '#include <mujoco/mujoco.h>\n#include <geometry_msgs/msg/pose_stamped.hpp>\n#include <rclcpp/rclcpp.hpp>\n#include "simulate.h"\n',
+            ),
+            (
                 '  param::config.band_attached_link = 6 * body_id;\n  \n  std::unique_ptr<UnitreeSDK2BridgeBase> interface = nullptr;\n',
                 '  param::config.band_attached_link = 6 * body_id;\n  elastic_band.point_[2] = param::config.elastic_band_point_z;\n  elastic_band.length_ = param::config.elastic_band_initial_length;\n  elastic_band.enable_ = param::config.elastic_band_start_enabled == 1;\n  \n  std::unique_ptr<UnitreeSDK2BridgeBase> interface = nullptr;\n',
+            ),
+            (
+                '  interface->start();\n  \n  while (true)\n  {\n    sleep(1);\n  }\n',
+                '  interface->start();\n\n  int ros_argc = 0;\n  char **ros_argv = nullptr;\n  if (!rclcpp::ok()) {\n    rclcpp::init(ros_argc, ros_argv);\n  }\n  auto pose_node = std::make_shared<rclcpp::Node>("g1_mujoco_groundtruth");\n  auto pose_pub = pose_node->create_publisher<geometry_msgs::msg::PoseStamped>("g1/mujoco_base_pose", 10);\n  rclcpp::WallRate pose_rate(100.0);\n\n  while (rclcpp::ok())\n  {\n    geometry_msgs::msg::PoseStamped pose;\n    pose.header.stamp = pose_node->now();\n    pose.header.frame_id = "odom";\n    pose.pose.position.x = d->qpos[0];\n    pose.pose.position.y = d->qpos[1];\n    pose.pose.position.z = d->qpos[2];\n    pose.pose.orientation.w = d->qpos[3];\n    pose.pose.orientation.x = d->qpos[4];\n    pose.pose.orientation.y = d->qpos[5];\n    pose.pose.orientation.z = d->qpos[6];\n    pose_pub->publish(pose);\n    pose_rate.sleep();\n  }\n',
             ),
         ],
     )

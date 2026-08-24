@@ -80,13 +80,7 @@ def generate_launch_description():
 
     arguments = [
         DeclareLaunchArgument('config', default_value=default_config),
-        DeclareLaunchArgument('use_visualization_bridge', default_value='true'),
-        DeclareLaunchArgument('use_stand_controller', default_value='false'),
-        DeclareLaunchArgument('stand_ramp_duration', default_value='3.0'),
-        DeclareLaunchArgument('stand_pitch_kp', default_value='0.8'),
-        DeclareLaunchArgument('stand_pitch_kd', default_value='0.08'),
-        DeclareLaunchArgument('stand_pitch_limit', default_value='0.25'),
-        DeclareLaunchArgument('stand_pitch_correction_sign', default_value='1.0'),
+        DeclareLaunchArgument('use_mujoco_ros_bridge', default_value='true'),
         DeclareLaunchArgument('use_rl_controller', default_value='true'),
         DeclareLaunchArgument('unitree_rl_lab_dir', default_value=EnvironmentVariable('UNITREE_RL_LAB_DIR', default_value='')),
         DeclareLaunchArgument('rl_auto_start', default_value='true'),
@@ -94,6 +88,8 @@ def generate_launch_description():
         DeclareLaunchArgument('rl_velocity_delay', default_value='4.0'),
         DeclareLaunchArgument('policy_cmd_vel_timeout', default_value='0.5'),
         DeclareLaunchArgument('state_joint_topic', default_value='g1/rl_joint_states'),
+        DeclareLaunchArgument('base_pose_topic', default_value='g1/mujoco_base_pose'),
+        DeclareLaunchArgument('root_frame', default_value='odom'),
         DeclareLaunchArgument('use_cmd_vel_bridge', default_value='false'),
         DeclareLaunchArgument('cmd_vel_topic', default_value='cmd_vel'),
         DeclareLaunchArgument('cmd_vel_duration', default_value='0.2'),
@@ -118,17 +114,19 @@ def generate_launch_description():
         DeclareLaunchArgument('elastic_band_initial_length', default_value=''),
     ]
 
-    visualization_bridge = Node(
+    mujoco_ros_bridge = Node(
         package='g1_sim',
-        executable='g1_visualization_publisher',
-        name='g1_visualization_publisher',
+        executable='g1_mujoco_ros_bridge',
+        name='g1_mujoco_ros_bridge',
         output='screen',
         arguments=[
             '--config', LaunchConfiguration('config'),
             '--unitree-mujoco-dir', LaunchConfiguration('unitree_mujoco_dir'),
             '--state-joint-topic', LaunchConfiguration('state_joint_topic'),
+            '--base-pose-topic', LaunchConfiguration('base_pose_topic'),
+            '--root-frame', LaunchConfiguration('root_frame'),
         ],
-        condition=IfCondition(LaunchConfiguration('use_visualization_bridge')),
+        condition=IfCondition(LaunchConfiguration('use_mujoco_ros_bridge')),
     )
 
     cmd_vel_bridge = Node(
@@ -146,21 +144,6 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('use_cmd_vel_bridge')),
     )
 
-    stand_controller = Node(
-        package='g1_sim',
-        executable='g1_stand_controller',
-        name='g1_stand_controller',
-        output='screen',
-        arguments=[
-            '--ramp-duration', LaunchConfiguration('stand_ramp_duration'),
-            '--pitch-kp', LaunchConfiguration('stand_pitch_kp'),
-            '--pitch-kd', LaunchConfiguration('stand_pitch_kd'),
-            '--pitch-limit', LaunchConfiguration('stand_pitch_limit'),
-            '--pitch-correction-sign', LaunchConfiguration('stand_pitch_correction_sign'),
-        ],
-        condition=IfCondition(LaunchConfiguration('use_stand_controller')),
-    )
-
     rviz = Node(
         package='rviz2',
         executable='rviz2',
@@ -170,4 +153,4 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('use_rviz')),
     )
 
-    return LaunchDescription(arguments + [OpaqueFunction(function=_launch_simulator), visualization_bridge, stand_controller, OpaqueFunction(function=_launch_rl_controller), cmd_vel_bridge, rviz])
+    return LaunchDescription(arguments + [OpaqueFunction(function=_launch_simulator), mujoco_ros_bridge, OpaqueFunction(function=_launch_rl_controller), cmd_vel_bridge, rviz])
